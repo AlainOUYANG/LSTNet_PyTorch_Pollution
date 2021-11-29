@@ -10,16 +10,16 @@ from visdom import Visdom
 
 args = Args()
 dataset_train = PollutionDataset(window=args.window, horizon=args.horizon, skip=args.skip, train=True)
-dataloader_train = DataLoader(dataset=dataset_train, batch_size=64, shuffle=True, num_workers=0)
+dataloader_train = DataLoader(dataset=dataset_train, batch_size=args.batch_size, shuffle=True, num_workers=0)
 
 dataset_test = PollutionDataset(window=args.window, horizon=args.horizon, skip=args.skip, train=False)
-dataloader_test = DataLoader(dataset=dataset_test, batch_size=64, shuffle=True, num_workers=0)
+dataloader_test = DataLoader(dataset=dataset_test, batch_size=args.batch_size, shuffle=True, num_workers=0)
 
 viz = Visdom(port=8097)
 viz.line([0.], [0], win='train_loss', opts=dict(title='train_loss', legend=['loss']))
 
 total_samples_train = len(dataset_train)
-n_iterations = total_samples_train // 64
+n_iterations = total_samples_train // args.batch_size
 print(total_samples_train, n_iterations)
 
 device = torch.device('cuda:0' if args.cuda else 'cpu')
@@ -86,7 +86,7 @@ with torch.no_grad():
         rmse += np.sqrt(metrics.mean_squared_error(targets_test_real, y_pred_test_real))
         mape += get_mape(y_pred_test_real, targets_test_real)
 
-    s = f'RMSE {rmse/i:.4f}, MAPE {mape/i:.4f}'
+    s = f'RMSE {rmse/(i+1):.4f}, MAPE {mape/(i+1):.4f}'
     print(s)
     flog.write(s + "\n")
     flog.flush()
